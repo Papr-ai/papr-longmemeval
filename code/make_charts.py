@@ -15,17 +15,17 @@ def title(ax,t,s):
 def save(fig,n): fig.savefig(f"assets/{n}.png",dpi=200,bbox_inches="tight",facecolor="white"); plt.close(fig)
 
 # 1. Accuracy vs context (the hero)
-pts=[("Papr, gpt-5-mini",15,94.4,True,(14,-34)),("Papr High (top 5)",16.5,95.4,True,(14,18)),("Papr High (top 20)",60,96.0,True,(-14,14)),
+pts=[("Papr, gpt-5-mini",15,94.4,True,(14,-34)),("gbrain",15.8,90.6,False,(14,-6)),("Papr High (top 5)",16.5,95.4,True,(14,18)),("Papr High (top 20)",60,96.0,True,(-14,14)),
      ("Hindsight",43.6,94.6,False,(14,-30))]
 fig,ax=plt.subplots(figsize=(10,6))
 ax.axvspan(0,22,color=ME,alpha=0.06,lw=0)
-ax.text(1.5,92.65,"Papr top-5 configs:\na third of Hindsight's context",color=ME,fontsize=11.5,va="bottom")
+ax.text(24,90.6,"Papr top-5 configs:\na third of Hindsight's context",color=ME,fontsize=11.5,va="bottom")
 for n,x,y,me,o in pts:
     ax.scatter(x,y,s=190 if me else 130,color=ME if me else OT,zorder=3,edgecolor="white",linewidth=1.5)
     ax.annotate(f"{n}\n{y:.1f}%  ·  {x:g}k tokens",(x,y),xytext=o,textcoords="offset points",fontsize=11.5,arrowprops=dict(arrowstyle="-",color="#c9ccd3",lw=0.8),
         color=INK if me else MUTED,fontweight="bold" if me else "normal",ha="right" if o[0]<0 else "left",va="bottom" if o[1]>0 else "top")
-ax.annotate("Full history in the prompt:\n60.2% at 112k tokens (off chart)",(70,92.6),xytext=(-8,8),textcoords="offset points",ha="right",va="bottom",fontsize=11,color=MUTED)
-ax.set_xlim(0,70); ax.set_ylim(92.5,96.8)
+ax.annotate("Full history in the prompt:\n60.2% at 112k tokens (off chart)",(70,89.9),xytext=(-8,8),textcoords="offset points",ha="right",va="bottom",fontsize=11,color=MUTED)
+ax.set_xlim(0,70); ax.set_ylim(89.8,96.8)
 ax.set_xlabel("Context sent to the answer model per question (thousand tokens)"); ax.set_ylabel("LongMemEval-S accuracy (%)")
 ax.grid(axis="y",color="#eef0f3")
 title(ax,"Top accuracy at a fraction of the context","Accuracy vs tokens per question, all 500 questions. Up and to the left is better.")
@@ -33,8 +33,8 @@ save(fig,"accuracy-vs-tokens")
 
 # 2. Leaderboard bars
 rows=[("Papr High (top 20)",96.0,1),("Chronos High",95.6,0),("Papr High (top 5)",95.4,1),("Mastra OM (gpt-5-mini)",94.9,0),("Hindsight*",94.6,0),
-      ("Papr (gpt-5-mini)",94.4,1),("Chronos Low",92.6,0),("Honcho",90.4,0),("Zep",71.2,0),("Full history in prompt",60.2,0)][::-1]
-fig,ax=plt.subplots(figsize=(10,6.4))
+      ("Papr (gpt-5-mini)",94.4,1),("Chronos Low",92.6,0),("gbrain",90.6,0),("Honcho",90.4,0),("Zep",71.2,0),("Full history in prompt",60.2,0)][::-1]
+fig,ax=plt.subplots(figsize=(10,6.9))
 b=ax.barh([r[0] for r in rows],[r[1] for r in rows],color=[ME if r[2] else "#d5d9e0" for r in rows],height=0.62)
 for r,bar in zip(rows,b): ax.text(r[1]+0.6,bar.get_y()+bar.get_height()/2,f"{r[1]:.1f}%",va="center",fontsize=12,color=INK if r[2] else MUTED,fontweight="bold" if r[2] else "normal")
 for t,r in zip(ax.get_yticklabels(),rows): t.set_color(INK if r[2] else MUTED); t.set_fontweight("bold" if r[2] else "normal")
@@ -43,8 +43,8 @@ title(ax,"LongMemEval-S: published results","500 questions. Each team's reported
 save(fig,"leaderboard")
 
 # 3. Tokens per question
-tk=[("Papr (gpt-5-mini)",15,1),("Papr High (top 5)",16.5,1),("Hindsight",43.6,0),("Papr High (top 20)",60,1),("Full history in prompt",112,0)][::-1]
-fig,ax=plt.subplots(figsize=(10,4.6))
+tk=[("Papr (gpt-5-mini)",15,1),("gbrain (90.6%)",15.8,0),("Papr High (top 5)",16.5,1),("Hindsight",43.6,0),("Papr High (top 20)",60,1),("Full history in prompt",112,0)][::-1]
+fig,ax=plt.subplots(figsize=(10,5.0))
 b=ax.barh([r[0] for r in tk],[r[1] for r in tk],color=[ME if r[2] else "#d5d9e0" for r in tk],height=0.6)
 for r,bar in zip(tk,b): ax.text(r[1]+1.2,bar.get_y()+bar.get_height()/2,f"{r[1]:g}k",va="center",fontsize=12,color=INK if r[2] else MUTED,fontweight="bold" if r[2] else "normal")
 for t,r in zip(ax.get_yticklabels(),tk): t.set_color(INK if r[2] else MUTED)
