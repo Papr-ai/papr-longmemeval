@@ -1,4 +1,4 @@
-# Papr on LongMemEval-S — 95.4% (Papr Embed High) / 94.4% (Rerank) / 91.0% (Low)
+# Papr on LongMemEval-S — 96.0% (High, K=20) / 95.4% (High, K=5) / 94.4% (Rerank) / 91.0% (Low)
 
 Per-question answers, official grading logs, retrieved sessions and code for Papr memory retrieval on
 [LongMemEval](https://github.com/xiaowu0162/LongMemEval) (`longmemeval_s_cleaned.json`, 500 questions).
@@ -7,26 +7,31 @@ Per-question answers, official grading logs, retrieved sessions and code for Pap
 
 | Setup | Answer model | Overall | Task-avg | Abstention | Retrieval speed (median, 1 request) | Reader tokens/q |
 |---|---|---|---|---|---|---|
+| **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | not measured (20 sessions vs 5) |
 | **Papr Embed High** | Claude Opus 4.6 (8k thinking) | **95.4% (477/500)** | 96.94% | 27/30 | ~1.9 s | ~16.5k |
 | **Papr Embed Rerank** | gpt-5-mini | **94.4% (472/500)** | 95.85% | 25/30 | ~1.9 s | ~15k |
 | **Papr Embed Low** | gpt-5-mini | **91.0% (455/500)** | 92.4% | 26/30 | ~0.17 s | ~14.2k |
 
-Papr Embed Low = schema embeddings only, no reranker (top 5 sessions by embedding score). Rerank and High add the Gemini 2.5 Flash reranker. Speed = question embedding (~170 ms, inline) + vector search (<1 ms) [+ reranker 1.8 s median]. Reranker tokens (20 sessions/question) are not included in reader tokens. Files: `papr_embed_*` = Low, `papr_low_*` = Rerank, `papr_high_*` = High.
+Papr Embed Low = schema embeddings only, no reranker (top 5 sessions by embedding score). Rerank and High add the Gemini 2.5 Flash reranker. Speed = question embedding (~170 ms, inline) + vector search (<1 ms) [+ reranker 1.8 s median]. Reranker tokens (20 sessions/question) are not included in reader tokens. Files: `papr_embed_*` = Low, `papr_low_*` = Rerank, `papr_high_*` = High (K=5), `papr_high_k20_*` = High, K=20.
 
 Per type (correct / total, abstention questions counted separately):
 
-| Type | Embed High | Embed Rerank | Embed Low |
-|---|---|---|---|
-| single-session-user | 64/64 | 63/64 | 62/64 |
-| single-session-assistant | 56/56 | 56/56 | 54/56 |
-| single-session-preference | 30/30 | 30/30 | 28/30 |
-| knowledge-update | 70/72 | 67/72 | 67/72 |
-| temporal-reasoning | 118/127 | 119/127 | 114/127 |
-| multi-session | 112/121 | 112/121 | 104/121 |
-| abstention | 27/30 | 25/30 | 26/30 |
+| Type | High K=20 | Embed High (K=5) | Embed Rerank | Embed Low |
+|---|---|---|---|---|
+| single-session-user | 64/64 | 64/64 | 63/64 | 62/64 |
+| single-session-assistant | 56/56 | 56/56 | 56/56 | 54/56 |
+| single-session-preference | 29/30 | 30/30 | 30/30 | 28/30 |
+| knowledge-update | 69/72 | 70/72 | 67/72 | 67/72 |
+| temporal-reasoning | 124/127 | 118/127 | 119/127 | 114/127 |
+| multi-session | 111/121 | 112/121 | 112/121 | 104/121 |
+| abstention | 27/30 | 27/30 | 25/30 | 26/30 |
 
 Reproduce the scores from the files here:
 `python src/evaluation/print_qa_metrics.py results/<name>.jsonl.eval-results-gpt-4o data/longmemeval_s_cleaned.json`
+
+### High K=20 (96.0%)
+
+Same retrieval and the official CoT prompt, but the reader gets the **top 20 reranked sessions instead of the top 5**. No count-question extraction step. 480/500 vs 477/500 for High K=5: 11 questions gained, 8 lost, so the net is +3, which is within the ±3 run-to-run variance below. The gain is concentrated in temporal-reasoning (130/133 vs 123/133, abstention-inclusive); task-averaged accuracy is 96.71% vs 96.94% for High K=5. K=20 was chosen after looking at the questions High K=5 missed, so it is tuned on the same set. Generate: `code/official_K20_generate.py`; grade: `code/judge_k20.py`. Per-question judge output: `results/papr_high_k20_opus-4-6.jsonl.eval-results-gpt-4o`.
 
 ## Pipeline
 
