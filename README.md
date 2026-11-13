@@ -7,7 +7,7 @@ Per-question answers, official grading logs, retrieved sessions and code for Pap
 
 | Setup | Answer model | Overall | Task-avg | Abstention | Retrieval speed (median, 1 request) | Reader tokens/q |
 |---|---|---|---|---|---|---|
-| **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | not measured (20 sessions vs 5) |
+| **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | ~60k |
 | **Papr Embed High** | Claude Opus 4.6 (8k thinking) | **95.4% (477/500)** | 96.94% | 27/30 | ~1.9 s | ~16.5k |
 | **Papr Embed Rerank** | gpt-5-mini | **94.4% (472/500)** | 95.85% | 25/30 | ~1.9 s | ~15k |
 | **Papr Embed Low** | gpt-5-mini | **91.0% (455/500)** | 92.4% | 26/30 | ~0.17 s | ~14.2k |
@@ -31,7 +31,7 @@ Reproduce the scores from the files here:
 
 ### High K=20 (96.0%)
 
-Same retrieval and the official CoT prompt, but the reader gets the **top 20 reranked sessions instead of the top 5**. No count-question extraction step. 480/500 vs 477/500 for High K=5: 11 questions gained, 8 lost, so the net is +3, which is within the ±3 run-to-run variance below. The gain is concentrated in temporal-reasoning (130/133 vs 123/133, abstention-inclusive); task-averaged accuracy is 96.71% vs 96.94% for High K=5. K=20 was chosen after looking at the questions High K=5 missed, so it is tuned on the same set. Generate: `code/official_K20_generate.py`; grade: `code/judge_k20.py`. Per-question judge output: `results/papr_high_k20_opus-4-6.jsonl.eval-results-gpt-4o`.
+Same retrieval and the official CoT prompt, but the reader gets the **top 20 reranked sessions instead of the top 5**. No count-question extraction step. The reader sees about 60k tokens per question instead of 16.5k. 480/500 vs 477/500 for High K=5: 11 questions gained, 8 lost, so the net is +3, which is within the ±3 run-to-run variance below. The gain is concentrated in temporal-reasoning (130/133 vs 123/133, abstention-inclusive); task-averaged accuracy is 96.71% vs 96.94% for High K=5. K=20 was chosen after looking at the questions High K=5 missed, so it is tuned on the same set. Generate: `code/official_K20_generate.py`; grade: `code/judge_k20.py`. Per-question judge output: `results/papr_high_k20_opus-4-6.jsonl.eval-results-gpt-4o`.
 
 ## Pipeline
 

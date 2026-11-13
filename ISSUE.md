@@ -4,7 +4,7 @@
 
 | Setup | Answer model | Overall | Task-avg | Abstention | Retrieval speed (median, 1 request) | Reader tokens/q |
 |---|---|---|---|---|---|---|
-| **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | not measured (20 sessions vs 5) |
+| **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | ~60k |
 | **Papr Embed High** | Claude Opus 4.6 (8k thinking) | **95.4% (477/500)** | 96.94% | 27/30 | ~1.9 s | ~16.5k |
 | **Papr Embed Rerank** | gpt-5-mini | **94.4% (472/500)** | 95.85% | 25/30 | ~1.9 s | ~15k |
 | **Papr Embed Low** | gpt-5-mini | **91.0% (455/500)** | 92.4% | 26/30 | ~0.17 s | ~14.2k |
