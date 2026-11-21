@@ -9,29 +9,36 @@ Per-question answers, official grading logs, retrieved sessions and code for Pap
 |---|---|---|---|---|---|---|
 | **Papr Embed High, K=20** | Claude Opus 4.6 (8k thinking) | **96.0% (480/500)** | 96.71% | 27/30 | ~1.9 s | ~60k |
 | **Papr Embed High** | Claude Opus 4.6 (8k thinking) | **95.4% (477/500)** | 96.94% | 27/30 | ~1.9 s | ~16.5k |
+| Papr Embed High, K=5, no extraction (ablation) | Claude Opus 4.6 (8k thinking) | 94.4% (472/500) | 96.02% | 24/30 | ~1.9 s | ~16.5k |
 | **Papr Embed Rerank** | gpt-5-mini | **94.4% (472/500)** | 95.85% | 25/30 | ~1.9 s | ~15k |
 | **Papr Embed Low** | gpt-5-mini | **91.0% (455/500)** | 92.4% | 26/30 | ~0.17 s | ~14.2k |
 
-Papr Embed Low = schema embeddings only, no reranker (top 5 sessions by embedding score). Rerank and High add the Gemini 2.5 Flash reranker. Speed = question embedding (~170 ms, inline) + vector search (<1 ms) [+ reranker 1.8 s median]. Reranker tokens (20 sessions/question) are not included in reader tokens. Files: `papr_embed_*` = Low, `papr_low_*` = Rerank, `papr_high_*` = High (K=5), `papr_high_k20_*` = High, K=20.
+Papr Embed Low = schema embeddings only, no reranker (top 5 sessions by embedding score). Rerank and High add the Gemini 2.5 Flash reranker. Speed = question embedding (~170 ms, inline) + vector search (<1 ms) [+ reranker 1.8 s median]. Reranker tokens (20 sessions/question) are not included in reader tokens. Files: `papr_embed_*` = Low, `papr_low_*` = Rerank, `papr_high_*` = High (K=5), `papr_high_noext_*` = High K=5 without the count-question extraction step, `papr_high_k20_*` = High, K=20.
 
 Per type (correct / total, abstention questions counted separately):
 
-| Type | High K=20 | Embed High (K=5) | Embed Rerank | Embed Low |
-|---|---|---|---|---|
-| single-session-user | 64/64 | 64/64 | 63/64 | 62/64 |
-| single-session-assistant | 56/56 | 56/56 | 56/56 | 54/56 |
-| single-session-preference | 29/30 | 30/30 | 30/30 | 28/30 |
-| knowledge-update | 69/72 | 70/72 | 67/72 | 67/72 |
-| temporal-reasoning | 124/127 | 118/127 | 119/127 | 114/127 |
-| multi-session | 111/121 | 112/121 | 112/121 | 104/121 |
-| abstention | 27/30 | 27/30 | 25/30 | 26/30 |
+| Type | High K=20 | Embed High (K=5) | High K=5, no extraction | Embed Rerank | Embed Low |
+|---|---|---|---|---|---|
+| single-session-user | 64/64 | 64/64 | 63/64 | 63/64 | 62/64 |
+| single-session-assistant | 56/56 | 56/56 | 56/56 | 56/56 | 54/56 |
+| single-session-preference | 29/30 | 30/30 | 30/30 | 30/30 | 28/30 |
+| knowledge-update | 69/72 | 70/72 | 69/72 | 67/72 | 67/72 |
+| temporal-reasoning | 124/127 | 118/127 | 118/127 | 119/127 | 114/127 |
+| multi-session | 111/121 | 112/121 | 112/121 | 112/121 | 104/121 |
+| abstention | 27/30 | 27/30 | 24/30 | 25/30 | 26/30 |
 
 Reproduce the scores from the files here:
 `python src/evaluation/print_qa_metrics.py results/<name>.jsonl.eval-results-gpt-4o data/longmemeval_s_cleaned.json`
 
 ### High K=20 (96.0%)
 
-Same retrieval and the official CoT prompt, but the reader gets the **top 20 reranked sessions instead of the top 5**. No count-question extraction step. The reader sees about 60k tokens per question instead of 16.5k. 480/500 vs 477/500 for High K=5: 11 questions gained, 8 lost, so the net is +3, which is within the ±3 run-to-run variance below. The gain is concentrated in temporal-reasoning (130/133 vs 123/133, abstention-inclusive); task-averaged accuracy is 96.71% vs 96.94% for High K=5. K=20 was chosen after looking at the questions High K=5 missed, so it is tuned on the same set. Generate: `code/official_K20_generate.py`; grade: `code/judge_k20.py`. Per-question judge output: `results/papr_high_k20_opus-4-6.jsonl.eval-results-gpt-4o`.
+Same retrieval and the official CoT prompt, but the reader gets the **top 20 reranked sessions instead of the top 5**. No count-question extraction step. The reader sees about 60k tokens per question instead of 16.5k. K=20 was chosen after looking at the questions High K=5 missed, so it is tuned on the same set.
+
+**Top 5 vs top 20 with the same reader policy.** The fair comparison is against High K=5 *without* the extraction step (same Opus 4.6 reader, 8k thinking, official prompt, no extraction at either depth): **472/500 (94.4%) at K=5 vs 480/500 (96.0%) at K=20**. K=20 gains 15 questions and loses 7, net +8. Most of the gain is temporal-reasoning (123/133 → 130/133, abstention-inclusive); knowledge-update is flat (74/78 at both). Turning on the extraction step at K=5 gives 477/500 (95.4%), so on top-5 it recovers about 5 of those 8. (An earlier version of this README compared K=20 against extraction-on K=5: 11 gained, 8 lost, net +3. That mixed two changes and understated the effect of depth.)
+
+**Where the K=5 → K=20 swing comes from.** Of the 15 gained questions, 11 already had every evidence session in the top 5; all 7 lost questions did too. So most of the swing is the reader handling a larger context differently, not new evidence being found. Of the 17 answerable questions K=20 still gets wrong, 15 have every evidence session in its top 20. Evidence-session recall (below) means the evidence was retrieved, not that the reader could use it.
+
+Generate: `code/official_K20_generate.py`; grade: `code/judge_k20.py`. Per-question judge output: `results/papr_high_k20_opus-4-6.jsonl.eval-results-gpt-4o`. The no-extraction K=5 run: `code/official_A.py` with `READER=claude-opus-4-6 THINK=8000 K=5 SRR=<reranker output>`, graded inline with the official `evaluate_qa.py` prompt and `gpt-4o-2024-08-06`; per-question output in `results/papr_high_noext_opus-4-6.jsonl.eval-results-gpt-4o`.
 
 ## Pipeline
 
